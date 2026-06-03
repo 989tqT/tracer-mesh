@@ -5,6 +5,7 @@ import signal
 import sys
 
 from scripts.mock_telemetry import publish_mock_telemetry
+from tracer_mesh.agents.recon import ReconAgent
 from tracer_mesh.agents.vuln import VulnerabilityAnalysisAgent
 from tracer_mesh.core.broker import MessageBroker
 from tracer_mesh.core.config import settings
@@ -84,6 +85,15 @@ async def start_app(*, args: argparse.Namespace) -> None:
     # start vulnerability agent processing loop
     await vuln_agent.run()
 
+    # check if recon discovery agent enabled
+    if args.recon:
+        recon_agent = ReconAgent(
+            broker=broker,
+            consumer_group="recon_group",
+            consumer_name="recon_cli_worker",
+        )
+        await recon_agent.run()
+
     # check if mock telemetry generation enabled
     if args.mock:
         asyncio.create_task(run_mock_generator(redis_url=redis_url))
@@ -107,6 +117,11 @@ def main() -> None:
     parser.add_argument("--embedding-model", help="model used for vector embeddings")
     parser.add_argument("--db-path", help="cve sqlite database file path")
     parser.add_argument("--chroma-path", help="chromadb database directory path")
+    parser.add_argument(
+        "--recon",
+        action="store_true",
+        help="activate local system recon discovery agent in background",
+    )
     parser.add_argument(
         "--mock",
         action="store_true",

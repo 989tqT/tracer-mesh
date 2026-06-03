@@ -60,3 +60,11 @@ $env:PYTHONPATH="src"; python -m tracer_mesh.main --mock
 ```
 
 You should see logs indicating that telemetry has been consumed and that the `VulnerabilityAnalysisAgent` has successfully queried the local LLM and output security reports to the finding stream.
+
+### Running Real Host Telemetry Ingestion
+To launch the orchestrator with the active local system discovery agent (polling installed libraries and open ports on 127.0.0.1 every 60s) instead of mock telemetry:
+```bash
+$env:PYTHONPATH="src"; python -m tracer_mesh.main --recon
+```
+This runs the `ReconAgent` in the background, periodically publishing host system states directly to the Redis Streams broker pipeline.
+

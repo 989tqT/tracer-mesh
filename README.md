@@ -1,6 +1,6 @@
 # 📦 Tracer Mesh (TM)
 
-[![CI Status](https://img.shields.io/github/actions/workflow/status/your-org/tracer-mesh/ci.yml?branch=main&style=flat-square)](https://github.com/your-org/tracer-mesh/actions)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/989tqT/tracer-mesh/ci.yml?branch=main&style=flat-square)](https://github.com/989tqT/tracer-mesh/actions)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg?style=flat-square)](LICENSE)
 [![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.12-green?style=flat-square)](https://www.python.org/)
 [![Local LLM](https://img.shields.io/badge/Local%20LLM-Ollama%20%7C%20vLLM-orange?style=flat-square)](https://ollama.com)
