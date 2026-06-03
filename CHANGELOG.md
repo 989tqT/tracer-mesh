@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0-alpha] - 2026-06-04
+
+### Added
+- Developed `PatchAgent` in `agents/patch.py` proposing remediation patches for identified CVEs.
+- Created `templates/patch_generation.j2` Jinja2 prompt template for structured LLM remediation suggestions.
+- Integrated `--patch` flag in `main.py` CLI orchestrator.
+- Created `tests/test_patch_agent.py` unit test suite.
+- Fixed CI pipeline dependencies configuration in `.github/workflows/ci.yml` by adding `psutil`.
+
 ## [0.3.0-alpha] - 2026-06-04
 
 ### Added

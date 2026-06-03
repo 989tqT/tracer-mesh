@@ -18,7 +18,7 @@ This guide walks you through setting up and running the Tracer Mesh threat hunti
 
 2. **Install Dependencies:**
    ```bash
-   pip install ruff pytest pytest-asyncio redis httpx chromadb jinja2 pyyaml pydantic-settings
+   pip install ruff pytest pytest-asyncio redis httpx chromadb jinja2 pyyaml pydantic-settings psutil
    ```
 
 3. **Configure Environment:**
@@ -68,3 +68,19 @@ $env:PYTHONPATH="src"; python -m tracer_mesh.main --recon
 ```
 This runs the `ReconAgent` in the background, periodically publishing host system states directly to the Redis Streams broker pipeline.
 
+### Running Real Network Connection Telemetry Ingestion
+To launch the orchestrator with the active local network connection monitoring agent (inspecting established connections against signature rules):
+```bash
+$env:PYTHONPATH="src"; python -m tracer_mesh.main --network
+```
+
+### Running Patch Proposer Agent
+To activate the remediation patch generation worker listening to found vulnerability streams:
+```bash
+$env:PYTHONPATH="src"; python -m tracer_mesh.main --patch
+```
+
+You can combine active agents in the orchestrator run command:
+```bash
+$env:PYTHONPATH="src"; python -m tracer_mesh.main --recon --network --patch
+```
