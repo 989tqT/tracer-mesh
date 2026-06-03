@@ -73,6 +73,9 @@ $env:PYTHONPATH="src"; python scripts/seed_cve.py
 
 # Launch CLI runner in mock telemetry ingestion mode
 $env:PYTHONPATH="src"; python -m tracer_mesh.main --mock
+
+# Or, launch with active local host system discovery scanning
+$env:PYTHONPATH="src"; python -m tracer_mesh.main --recon
 ```
 
 ---

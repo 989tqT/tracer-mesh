@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha.1] - 2026-06-04
+
+### Added
+- Developed `ReconAgent` in `agents/recon.py` executing async local package retrieval and port scanning.
+- Added `--recon` flag support in `main.py` CLI orchestrator.
+- Created `tests/test_recon_agent.py` unit test suite.
+
 ## [0.1.0-alpha.1] - 2026-06-04
 
 ### Added
@@ -14,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integrated thread-safe SQLite and ChromaDB state store (`StateStore`) in `core/db.py`.
 - Created Jinja2 templates loader and vulnerability analysis system prompt.
 - Developed `BaseAgent` and `VulnerabilityAnalysisAgent` for stream telemetry correlation and automated reasoning.
-- Developed `ReconAgent` in `agents/recon.py` executing async local package retrieval and port scanning.
 - Implemented `scripts/seed_cve.py` to seed SQLite/ChromaDB databases.
 - Implemented `scripts/mock_telemetry.py` to publish mock payloads to Redis Streams.
 - Built CLI Orchestrator entry point in `main.py` supporting environment variable parsing and graceful shutdown.
