@@ -1,0 +1,11 @@
+rules:
+  - name: "Suspicious administrative ports"
+    description: "Detects connections to common remote admin ports (SSH, Telnet, RDP, VNC) from local processes"
+    alert_if:
+      remote_ports: [22, 23, 3389, 5900]
+      states: ["ESTABLISHED"]
+  - name: "Database port exposure"
+    description: "Detects outbound connections to common database ports outside localhost"
+    alert_if:
+      remote_ports: [1433, 3306, 5432, 27017]
+      states: ["ESTABLISHED"]

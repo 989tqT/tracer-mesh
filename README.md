@@ -76,6 +76,9 @@ $env:PYTHONPATH="src"; python -m tracer_mesh.main --mock
 
 # Or, launch with active local host system discovery scanning
 $env:PYTHONPATH="src"; python -m tracer_mesh.main --recon
+
+# Or, launch with active local network connection monitoring
+$env:PYTHONPATH="src"; python -m tracer_mesh.main --network
 ```
 
 ---

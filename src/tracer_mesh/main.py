@@ -5,6 +5,7 @@ import signal
 import sys
 
 from scripts.mock_telemetry import publish_mock_telemetry
+from tracer_mesh.agents.network import NetworkAgent
 from tracer_mesh.agents.recon import ReconAgent
 from tracer_mesh.agents.vuln import VulnerabilityAnalysisAgent
 from tracer_mesh.core.broker import MessageBroker
@@ -94,6 +95,15 @@ async def start_app(*, args: argparse.Namespace) -> None:
         )
         await recon_agent.run()
 
+    # check if network ingestion agent enabled
+    if args.network:
+        network_agent = NetworkAgent(
+            broker=broker,
+            consumer_group="network_group",
+            consumer_name="network_cli_worker",
+        )
+        await network_agent.run()
+
     # check if mock telemetry generation enabled
     if args.mock:
         asyncio.create_task(run_mock_generator(redis_url=redis_url))
@@ -121,6 +131,11 @@ def main() -> None:
         "--recon",
         action="store_true",
         help="activate local system recon discovery agent in background",
+    )
+    parser.add_argument(
+        "--network",
+        action="store_true",
+        help="activate local network traffic monitoring agent in background",
     )
     parser.add_argument(
         "--mock",
