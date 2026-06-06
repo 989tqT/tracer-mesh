@@ -1,15 +1,13 @@
-You are an expert security engineer. Given the vulnerability analysis below, produce a remediation patch.
+You are a security expert. Given the vulnerability details below, return a JSON object with exactly these fields:
+- "cve_id": string
+- "action": string
+- "remediation_code": string
+- "validation_command": string
 
-Vulnerability:
+Only output the JSON object, no extra text, no code fences.
+
+Vulnerability details:
 - CVE ID: {{ cve_id }}
 - Severity: {{ severity }}
 - Description: {{ description }}
 - Affected component: {{ affected_component | tojson }}
-
-Provide a JSON response with the following fields:
-- "cve_id": the CVE identifier (string)
-- "action": one of "upgrade", "firewall_rule", "config_change", "code_patch"
-- "remediation_code": the actual script or command to fix the issue (string)
-- "validation_command": command to verify the patch was applied (string)
-
-Only output JSON, no extra text.

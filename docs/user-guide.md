@@ -12,7 +12,7 @@ This guide walks you through setting up and running the Tracer Mesh threat hunti
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/your-org/tracer-mesh.git
+   git clone https://github.com/989tqT/tracer-mesh.git
    cd tracer-mesh
    ```
 

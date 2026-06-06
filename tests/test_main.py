@@ -35,11 +35,11 @@ async def test_main_startup_pipeline(
     mock_agent.run = AsyncMock()
     mock_agent_class.return_value = mock_agent
 
-    # build CLI arguments Namespace mock
+    # build CLI argument Namespace mock
     args = argparse.Namespace(
         redis_url="redis://localhost:9999",
         ollama_url="http://localhost:8888",
-        llm_model="test-llm",
+        reasoning_model="test-llm",
         embedding_model="test-emb",
         db_path="test.db",
         chroma_path="test_chroma",

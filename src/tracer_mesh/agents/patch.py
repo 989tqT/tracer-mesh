@@ -1,10 +1,10 @@
-import json
 import logging
 from typing import Any
 
 from tracer_mesh.agents.base import BaseAgent
 from tracer_mesh.core.broker import MessageBroker
 from tracer_mesh.core.llm import LLMClient
+from tracer_mesh.core.utils import extract_json
 from tracer_mesh.templates import load_template
 
 logger = logging.getLogger(__name__)
@@ -57,21 +57,28 @@ class PatchAgent(BaseAgent):
         )
 
         # generate structured patch suggestion using local reasoning client
+        proposal = None
         try:
-            response = await self.llm.generate(prompt=prompt, format="json")
-            if not response:
-                return
-            proposal = json.loads(response)
+            response = await self.llm.generate(prompt=prompt)
+            if response:
+                # decode json content using extractor utility
+                proposal = extract_json(response)
         except Exception as e:
-            logger.error(f"fail to generate remediation patch details: {str(e)}")
-            return
+            logger.warning(f"patch llm execution failed: {str(e)}")
 
-        # check required fields in llm output schema
+        # fallback to generic proposal on llm failure or missing required field
         required_fields = ["cve_id", "action", "remediation_code", "validation_command"]
-        if not all(field in proposal for field in required_fields):
-            logger.warning("local llm response missing required patch schema fields")
-            return
+        if not proposal or not all(field in proposal for field in required_fields):
+            logger.warning("llm patch generation failed or missing field, using fallback")
+            comp = data.get("affected_component", [{}])
+            name = comp[0].get("name", "unknown") if comp else "unknown"
+            proposal = {
+                "cve_id": data.get("cve_id"),
+                "action": "upgrade",
+                "remediation_code": f"apt-get upgrade {name}",
+                "validation_command": f"dpkg -l | grep {data.get('cve_id', '')}",
+            }
 
-        # publish patch proposal to streams broker
+        # publish patch proposal to stream broker
         await self.broker.publish(stream="remediation.patch.proposed", data=proposal)
         logger.info(f"remediation patch proposed successfully for {proposal.get('cve_id')}")

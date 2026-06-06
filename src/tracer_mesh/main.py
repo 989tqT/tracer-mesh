@@ -41,16 +41,21 @@ async def run_mock_generator(*, redis_url: str, delay: float = 3.0) -> None:
 
 
 async def start_app(*, args: argparse.Namespace) -> None:
-    # resolve connection parameters
+    # resolve connection parameter
     redis_url = args.redis_url or settings.redis_url
     ollama_url = args.ollama_url or settings.ollama_url
-    llm_model = args.llm_model or settings.llm_model
+    reasoning_model = (
+        getattr(args, "reasoning_model", None)
+        or getattr(args, "llm_model", None)
+        or settings.reasoning_model
+    )
     emb_model = args.embedding_model or settings.embedding_model
     db_path = args.db_path or settings.db_path
     chroma_path = args.chroma_path or settings.chroma_path
 
     logger.info(
-        f"bootstrapping tracer mesh service engine (reasoning: {llm_model}, embedding: {emb_model})"
+        "bootstrapping tracer mesh service engine "
+        f"(reasoning: {reasoning_model}, embedding: {emb_model})"
     )
 
     # init message broker connection
@@ -62,13 +67,14 @@ async def start_app(*, args: argparse.Namespace) -> None:
     state_store.init_db()
 
     # init local llm query client
-    llm_client = LLMClient(base_url=ollama_url, model_name=llm_model)
+    llm_client = LLMClient(base_url=ollama_url, model_name=reasoning_model)
 
     # instantiate core vulnerability analysis agent
     vuln_agent = VulnerabilityAnalysisAgent(
         broker=broker,
         llm=llm_client,
         state_store=state_store,
+        embedding_model=emb_model,
         consumer_group="vuln_group",
         consumer_name="vuln_cli_worker",
     )
@@ -128,13 +134,13 @@ async def start_app(*, args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    # configure command line arguments parser
+    # configure command line argument parser
     parser = argparse.ArgumentParser(
         description="Tracer Mesh: Local-first AI agent mesh for threat hunting."
     )
     parser.add_argument("--redis-url", help="redis connection endpoint url")
     parser.add_argument("--ollama-url", help="local ollama server base url")
-    parser.add_argument("--llm-model", help="model used for security analysis")
+    parser.add_argument("--reasoning-model", help="model used for security analysis")
     parser.add_argument("--embedding-model", help="model used for vector embeddings")
     parser.add_argument("--db-path", help="cve sqlite database file path")
     parser.add_argument("--chroma-path", help="chromadb database directory path")

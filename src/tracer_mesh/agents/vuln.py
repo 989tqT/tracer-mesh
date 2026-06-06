@@ -1,4 +1,4 @@
-import json
+import asyncio
 import logging
 from typing import Any
 
@@ -6,6 +6,7 @@ from tracer_mesh.agents.base import BaseAgent
 from tracer_mesh.core.broker import MessageBroker
 from tracer_mesh.core.db import StateStore
 from tracer_mesh.core.llm import LLMClient
+from tracer_mesh.core.utils import extract_json
 from tracer_mesh.templates import load_template
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class VulnerabilityAnalysisAgent(BaseAgent):
         broker: MessageBroker,
         llm: LLMClient,
         state_store: StateStore,
+        embedding_model: str = "nomic-embed-text",
         consumer_group: str = "vuln_group",
         consumer_name: str = "vuln_worker_1",
     ):
@@ -51,6 +53,7 @@ class VulnerabilityAnalysisAgent(BaseAgent):
         super().__init__(broker=broker, consumer_group=consumer_group, consumer_name=consumer_name)
         self.llm = llm
         self.state_store = state_store
+        self.embedding_model = embedding_model
 
     async def run(self) -> None:
         """
@@ -181,58 +184,64 @@ class VulnerabilityAnalysisAgent(BaseAgent):
         Returns:
             List[Dict[str, Any]]: Matching CVE records.
         """
-        matches = []
-        for comp in components:
+        async def query_component(*, comp: dict[str, str]) -> list[dict[str, Any]]:
             name = comp["name"]
             version = comp.get("version")
 
             # search precise product in sqlite
             rows = await self.state_store.search_cve_by_product(product=name, version=version)
-            matches.extend(rows)
+            if rows:
+                return rows
 
             # fallback to vector search if no precise db match found
-            if not rows:
-                # get embedding vector from local llm
-                embedding = await self.llm.get_embedding(text=name)
-                similar = await self.state_store.search_cve_by_vector(
-                    query_text=name, embedding=embedding
-                )
-                matches.extend(similar)
+            embedding = await self.llm.get_embedding(text=name, model=self.embedding_model)
+            if not embedding:
+                return []
 
-        # eliminate duplicate cve rows by id
+            return await self.state_store.search_cve_by_vector(
+                query_text=name, embedding=embedding
+            )
+
+        # execute queries concurrently to bypass sequential latency
+        tasks = [query_component(comp=comp) for comp in components]
+        results = await asyncio.gather(*tasks)
+
+        matches = []
+        for res in results:
+            matches.extend(res)
+
+        # eliminate duplicate cve records by id
         unique = {cve["cve_id"]: cve for cve in matches if cve and "cve_id" in cve}
+        logger.info("found %d matched CVEs for components %s", len(unique), str(components))
         return list(unique.values())
 
     async def _call_llm_for_analysis(self, *, context: dict[str, Any]) -> dict[str, Any] | None:
-        """
-        Format prompt template and query the local LLM endpoint for risk categorization.
-
-        Args:
-            context (Dict[str, Any]): Jinja2 rendering context payload.
-
-        Returns:
-            Optional[Dict[str, Any]]: Parsed LLM assessment object or None on error.
-        """
+        # query ollama endpoint and fallback to database record on failure
         try:
-            # load analysis template from assets
+            # load analysis template from asset
             template = load_template(name="vuln_analysis.j2")
             prompt = template.render(context)
 
             # query local model with strict json format constraint
-            response_text = await self.llm.generate(prompt=prompt, format="json")
-            if not response_text:
-                return None
-
-            # decode json content
-            result = json.loads(response_text)
-
-            # validate required json attributes
-            required_fields = ["cve_id", "severity", "description"]
-            if all(field in result for field in required_fields):
-                return result
-            else:
-                logger.warning("local llm JSON response missing critical keys")
-                return None
+            response_text = await self.llm.generate(prompt=prompt)
+            if response_text:
+                # decode json content using extractor utility
+                result = extract_json(response_text)
+                if result:
+                    # validate required json attribute
+                    required_fields = ["cve_id", "severity", "description"]
+                    if all(field in result for field in required_fields):
+                        return result
         except Exception as e:
-            logger.error(f"llm execution error: {str(e)}")
-            return None
+            logger.warning(f"llm execution failed: {str(e)}")
+
+        # fallback to first cve record detail
+        if context.get("matched_cves"):
+            cve = context["matched_cves"][0]
+            return {
+                "cve_id": cve.get("cve_id"),
+                "severity": cve.get("severity", "UNKNOWN"),
+                "description": cve.get("description", ""),
+                "remediation_suggestion": "Upgrade affected component to latest version."
+            }
+        return None

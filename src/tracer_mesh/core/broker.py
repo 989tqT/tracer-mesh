@@ -21,7 +21,14 @@ class MessageBroker:
 
     async def connect(self) -> None:
         # establish async connection to redis
-        self.client = aioredis.Redis.from_url(self.redis_url, decode_responses=True)
+        self.client = aioredis.Redis.from_url(
+            self.redis_url,
+            decode_responses=True,
+            socket_timeout=10.0,
+            socket_connect_timeout=5.0,
+            retry_on_timeout=True,
+            health_check_interval=30,
+        )
         logger.info("connected to redis stream broker")
 
     async def disconnect(self) -> None:

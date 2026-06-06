@@ -40,9 +40,11 @@ class StateStore:
         conn.commit()
         conn.close()
 
-        # setup local chroma vector storage
+        # setup local chroma vector storage without default embedding function
         self.chroma_client = chromadb.PersistentClient(path=self.chroma_path)
-        self.collection = self.chroma_client.get_or_create_collection("cves")
+        self.collection = self.chroma_client.get_or_create_collection(
+            "cves", embedding_function=None
+        )
         logger.info("initialized sqlite cve and chromadb storage")
 
     async def search_cve_by_product(
@@ -87,7 +89,8 @@ class StateStore:
             if embedding is not None:
                 results = self.collection.query(query_embeddings=[embedding], n_results=limit)
             else:
-                results = self.collection.query(query_texts=[query_text], n_results=limit)
+                logger.warning("skipping vector query due to missing embedding vector")
+                return []
 
             cves = []
             if not results or not results["documents"]:

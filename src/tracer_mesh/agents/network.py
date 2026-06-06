@@ -12,7 +12,9 @@ from tracer_mesh.core.broker import MessageBroker
 logger = logging.getLogger(__name__)
 
 # set default rules path relative to root
-_DEFAULT_RULES_PATH = Path(__file__).parent.parent.parent / "configs" / "network_rules.yaml"
+_DEFAULT_RULES_PATH = (
+    Path(__file__).parent.parent.parent.parent / "configs" / "network_rules.yaml"
+)
 
 
 class NetworkAgent(BaseAgent):
@@ -53,16 +55,20 @@ class NetworkAgent(BaseAgent):
         self.rules = self._load_rules()
         logger.info(f"network agent active polling connections every {self.scan_interval}s")
 
-        while True:
-            try:
-                # inspect active connections
-                events = await self._collect_network_events()
-                for evt in events:
-                    await self.broker.publish(stream="telemetry.network.events", data=evt)
-            except Exception as e:
-                logger.error(f"error in network agent poll cycle: {str(e)}")
+        async def poll_loop():
+            while True:
+                try:
+                    # inspect active connections
+                    events = await self._collect_network_events()
+                    for evt in events:
+                        await self.broker.publish(stream="telemetry.network.events", data=evt)
+                except Exception as e:
+                    logger.error(f"error in network agent poll cycle: {str(e)}")
 
-            await asyncio.sleep(self.scan_interval)
+                await asyncio.sleep(self.scan_interval)
+
+        # start connections scanning loop in background task
+        asyncio.create_task(poll_loop())
 
     def _load_rules(self) -> list[dict[str, Any]]:
         # load network rules from local file
